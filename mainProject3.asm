@@ -1,11 +1,11 @@
 .data
 	account: .word   100, 101, 102, 103
 	amount: .word 	 1000, 2000, 3000, 4000
-	input: .asciiz "Select what operation would you like to perform?\n1. Create Account\n2. Perform Transaction  "
+	
+	faltu:		.asciiz "Your Account has been created.Your account number is: "
 	accountCreated: .asciiz "Your Account has been created.Your account number is: "
 	depositAmount:	.asciiz "\n Please deposit some amount in your account "
 	openingBalance: .asciiz "Thankyou for opening account. Your initial balance is: "
-	continue:	.asciiz "\nPess 1 to continue: " 
 	performTransaction: .asciiz "What do want?\n 1.Deposit Amount\n 2.Withdraw Amount\n 3.Check Balance\n 4.Third Party Transfer\n"
 	accountNumber:	.asciiz "Please enter account number: "
 	amountEnter:	.asciiz "Please enter amount: "
@@ -15,30 +15,29 @@
 	checkBalance:	.asciiz "Current Balance is: "
 	error:		.asciiz "Does not have this account number "
 	firstAccount:	.asciiz "Please enter your account number "
-	secondAccount:	.asciiz "Please enter other account number " 
+	secondAccount:	.asciiz "Please enter other account number "
+
+	input: .asciiz "Select what operation would you like to perform?\n1. Create Account\n2. Perform Transaction  "
+	continue:	.asciiz "\nPess 1 to continue: "  
 	 
 .text
 .globl main
 main:
 
 
+
+	addi $t0,$0,16	#t0 me index hai wrt 4byte
+	addi $t1,$0,4
+	addi $t2,$0,1
+	addi $t3,$0,104	#t2 me 104 save h
 	
-	addi $t1,$0,16	#next index 16 is in t1
+
+	add $a1,$0,$t0	#a1 me 4byte ka index hai
+	add $a2,$0,$t3
+	add $a3,$0,$t1	#a3 me length hai array ka
 	
-	addi $t2,$0,1	#select option 1 in t2
 
-	addi $t3,$0,4   #t3 me index h hai
-	addi $t4,$0,4	#t4 me index hai a2 ko again sahi kne k liye
-
-	add $a1,$0,$t1	#fist argument in a1=t1
-	add $a2,$0,$t3	#second agument in a2 = t3 index hai array ki
-	add $a3,$0,$t4  #thid agument
-
-	la $t5,account
-	lw $t6,12($t5)
-	addi $t6,$t6,1	
-
-#loop:
+loopAgain:
 	li $v0,4
 	la $a0,input
 	syscall
@@ -48,10 +47,6 @@ main:
 
 	move $t0,$v0	#input in t0
 
-	add $a0,$0,$t6	#fist element of aay in $a0 
-	addi $t6,$t6,1	#incement $t6
-
-
 	beq $t0,$t2,option1
 	addi $t2,$t2,1
 	beq $t0,$t2,option2
@@ -59,19 +54,7 @@ main:
 option1:
 	jal createAccount
 
-	j out
-
-#	li $v0,4
-#	la $a0,continue
-#	syscall
-
-#	li $v0,5
-#	syscall
-
-#	move $t7,$v0
-	
-#	bne $t7,$t2,out
-#	j loop
+	j orderToContinue
 
 option2:			#for perform transaction
 	li $v0,4
@@ -94,60 +77,50 @@ option2:			#for perform transaction
 
 option3:
 	jal DepositAmount
-	j out
+	j orderToContinue
 
 option4:
 	jal WithdrawAmount
-	j out
+	j orderToContinue
 
 option5:
 	jal CheckBalances
-	j out
+	j orderToContinue
 
 option6:
 	jal ThirdPartyTransfer
-	j out
+	j orderToContinue
 
+orderToContinue:
+	li $v0,4
+	la $a0,continue
+	syscall
 
+	la $a0,5
+	syscall
 
+	move $t7, $v0
+	addi $t8,$0,1
+	
+	beq $t7, $t8,loopAgain
+	
 out:
 	li $v0,10
 	syscall
 
-
 createAccount:
-	addi $sp,$sp,-16
-
 	sw $s0,0($sp)
-	sw $s1,4($sp)
-	sw $s2,8($sp)
-	sw $s3,12($sp)
-	sw $s4,16($sp)
 
-	add $s0,$0,$a0
-	#addi $a0,$a0,1
-		
-	sw $s0,account($a1)
-	#addi $a2,$a2,1	
-	
+
+	sw $a2,account($a1)
+
+
 	li $v0,4
 	la $a0,accountCreated
 	syscall
 
-	la $s1,account	#addess of account in $s1
-
-	add $a2,$a2,$a2
-	add $a2,$a2,$a2	#making index 4times
-
-	add $s2,$s1,$a2	#load addess in s2
-
-
-	add  $a2,$0,$a3		#make $a2 again 4	
-
-	lw $s3,0($s2)	#aay element in s3
-
 	li $v0,1
-	move $a0,$s3
+	move $a0, $a2
 	syscall
 
 	li $v0,4
@@ -155,48 +128,31 @@ createAccount:
 	syscall
 
 	li $v0,5
-	syscall	
-	
-	move $s4,$v0	#amount in $s4
+	syscall
 
+	move $s0, $v0
+
+	sw $s0, amount($a1)
+
+	addi $a1,$a1,4	#a1 ko brhane k liye wrt 4byte
+	addi $a2,$a2,1
+	addi $a3,$a3,1	#length brhane k liye
 
 	li $v0,4
 	la $a0,openingBalance
-	syscall	
-
-	sw $s4,amount($a1)	#stoing amount in amount aray
-	addi $a1,$a1,4
-		
-
-	la $s1,amount	#addess of account in $s1
-
-	add $a2,$a2,$a2
-	add $a2,$a2,$a2	#making index 4times
-
-	add $s2,$s1,$a2	#load addess in s2
-
-
-	add  $a2,$0,$a3		#make $a2 again 4	
-	addi $a2,$a2,1
-	addi $a3,$a3,1		#make a3 5
-
-	lw $s3,0($s2)	#aay element in s3
-
-	li $v0,1
-	move $a0,$s3
 	syscall
 
-	lw $s0,0($sp)
-	lw $s1,4($sp)
-	lw $s2,8($sp)
-	lw $s3,12($sp)
-	lw $s4,16($sp)
+	li $v0,1
+	move $a0,$s0
+	syscall
 
-	addi $sp,$sp,16
-	
+	add $a0,$0,$0
+
+	lw $s0,0($sp)
+
 	jr $ra
 
-.end createAccount
+.end createAccount	
 
 
 DepositAmount:
@@ -524,16 +480,16 @@ ThirdPartyTransfer:
 	li $v0,5
 	syscall
 
-	move $s0,$v0	#putting fir account input in $s0
+	move $s0,$v0	#putting first account input in $s0
 
-	li $v0,4
-	la $a0,secondAccount
-	syscall
+	#li $v0,4
+	#la $a0,secondAccount
+	#syscall
 
-	li $v0,5
-	syscall
+	#li $v0,5
+	#syscall
 
-	move $s1,$v0	#putting second account input in $s1
+	#move $s1,$v0	#putting second account input in $s1
 
 
 
@@ -564,15 +520,53 @@ looping1:
 
 	#abhi mere paas $s7 me account number hai aur $s2 me woh index hai jahan account number match hua hai
 
+	
+
 outOfloop1:
+	li $v0,4
+	la $a0,secondAccount
+	syscall
+
+	li $v0,5
+	syscall
+
+	move $s1,$v0	#putting second account input in $s1
+
+
+#for second account
+	add $s0,$s1,$0		#ab input account 2 ka $s0 me hai
+	
+	li $s1,0		#s1 me index hai
+	addi $s8,$0,0		#s5 me counter hai
+	###s3 me account ki array ka adrress hai aur s4 me amount ki array ka
+
+
+looping2:
+	slt $s6,$s1,$a3
+	beq $s6,$0,notFoundAccount
+
+	add $s1,$s1,$s1
+	add $s1,$s1,$s1	#double the index
+
+	add $s6,$s1,$s3	#s5 me account ki array ka address hai
+
+	lw $s6,0($s6)	#get the value in the array
+
+	beq $s6,$s0,outOfloop2
+	addi $s8,$s8,1
+	add $s1,$s8,$0	#to correct index
+
+	j looping2
+
+outOfloop2:
 	#addi $s8,$s5,0	
 	add $s6,$s2,$s4
 
-	lw $s8,0($s6)	#ab s8 me mere paas woh amount h jo mjhy used krni hai
+	lw $s7,0($s6)	#ab s7 me mere paas woh amount h jo mjhy used krni hai
 
 	addi $s6,$0,4
 	mult $s6,$s5
-	mflo $s5	#s5 me ab woh index jo 4 se multiply ho chuka hai
+	mflo $s6	#s6 me ab woh index jo 4 se multiply ho chuka hai
 
 	li $v0,4
 	la $a0,amountEnter
@@ -581,63 +575,37 @@ outOfloop1:
 	li $v0,5
 	syscall
 
-	move $s7,$v0	#ab $s7 me input amount hai mere paas
+	move $s5,$v0	#ab $s5 me input amount hai mere paas
 
-	slt $s6,$s7,$s8
-	beq $s1,$0,balancekam1
-	sub $s8,$s8,$s7	#amount update hgyi account1 ki
+	slt $s2,$s5,$s7
+	beq $s2,$0,balancekam1
+	sub $s7,$s7,$s5	#amount update hgyi account1 ki
 
-	sw $s8,amount($s5)	#amount update hgyi array me account1 ki
+	sw $s7,amount($s6)	#amount update hgyi array me account1 ki
 
 	li $v0,1
-	move $a0,$s8
+	move $a0,$s7
 	syscall
-	
 
-
-#for second account
-	add $s0,$s1,$0		#ab input account 2 ka $s0 me hai
-	
-	li $s1,0		#s1 me index hai
-	addi $s2,$0,0		#s2 me counter hai
-	###s3 me account ki array ka adrress hai aur s4 me amount ki array ka
-
-
-looping2:
-	slt $s5,$s1,$a3
-	beq $s5,$0,notFoundAccount
-
-	add $s1,$s1,$s1
-	add $s1,$s1,$s1	#double the index
-
-	add $s5,$s1,$s3	#s5 me account ki array ka address hai
-
-	lw $s6,0($s5)	#get the value in the array
-
-	beq $s6,$s0,outOfloop2
-	addi $s2,$s2,1
-	add $s1,$s2,$0	#to correct index
-
-	j looping2
-
-outOfloop2:
+#outOfloop2:
 	#s2 me counter hai aur s1 me index ka address hai mere paas
 
-	add $s5,$s1,$s4	#s5 me overall address hai amount ki array ka
+	add $s6,$s1,$s4	#s5 me overall address hai amount ki array ka
 
-	lw $s4,0($s5)	#ab s4 me mere paas woh account2 ki value hai mere paas
+	lw $s4,0($s6)	#ab s4 me mere paas woh account2 ki value hai mere paas
 	addi $s6,$0,4	#s6 me 4 hai mere paas
 
-	mult $s6,$s2	
+	mult $s6,$s8	
 	mflo $s6	#index hai s6 me wrt 4byte
 	
-	add $s4,$s4,$s7	#ab account me mere paas account1 ki value add hjaegi
+	add $s4,$s4,$s5	#ab account me mere paas account1 ki value add hjaegi
 
 	sw $s4,amount($s6)
 
 	li $v0,1
 	move $a0,$s4
 	syscall
+
 
 	j outing
 
@@ -674,3 +642,4 @@ outing:
 
 
 .end main
+
