@@ -1,6 +1,6 @@
 .data
-	account: .word   100, 101, 102, 103
-	amount: .word 	 1000, 2000, 3000, 4000
+	account: .word   1000, 1001, 1002, 1003, 1004, 1005
+	amount: .word 	 1000, 2000, 3000, 4000, 5000, 6000
 	
 	welcome:	.asciiz "Welcome to Our Bank Management System \n "
 	input: .asciiz "Select what operation would you like to perform?\n1. Create Account\n2. Perform Transaction  "
@@ -29,9 +29,9 @@ main:
 
 
 	addi $t0,$0,16	#t0 me index hai wrt 4byte
-	addi $t1,$0,4
+	addi $t1,$0,6
 	addi $t2,$0,1
-	addi $t3,$0,104	#t2 me 104 save h
+	addi $t3,$0,1006	#t2 me 1006 save h
 	
 
 	add $a1,$0,$t0	#a1 me 4byte ka index hai
