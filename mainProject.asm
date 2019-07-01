@@ -580,7 +580,6 @@ outOfloop2:
 	move $a0,$s7
 	syscall
 
-#outOfloop2:
 	#s2 me counter hai aur s1 me index ka address hai mere paas
 
 	add $s6,$s1,$s4	#s5 me overall address hai amount ki array ka
@@ -594,10 +593,6 @@ outOfloop2:
 	add $s4,$s4,$s5	#ab account me mere paas account1 ki value add hjaegi
 
 	sw $s4,amount($s6)
-
-	#li $v0,1
-	#move $a0,$s4
-	#syscall
 
 	lw $s0,0($sp)
 	lw $s1,4($sp)
