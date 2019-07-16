@@ -21,6 +21,7 @@
 	thanks:		.asciiz "Thankyou for Using Our Services "
 	transfer:	.asciiz "Your Amount has been transfered to your desire account.Current balance is: " 
 	continue:	.asciiz "\nPress 1 to continue: " 
+	amountInvalid:	.asciiz "\n You have entered an invalid amount "
 	
 .text
 .globl main
@@ -28,7 +29,7 @@ main:
 
 
 
-	addi $t0,$0,16	#t0 me index hai wrt 4byte
+	addi $t0,$0,24	#t0 me index hai wrt 4byte
 	addi $t1,$0,6
 	addi $t2,$0,1
 	addi $t3,$0,1006	#t2 me 1006 save h
@@ -71,7 +72,7 @@ option2:			#for perform transaction
 	li $v0,5
 	syscall
 
-	move $t0,$v0	#ab $t0 me transaction k values ayengi
+	move $t0,$v0	#now we have transaction values in t0
 	addi $t2,$0,1
 
 	beq $t0,$t2,option3
@@ -128,6 +129,13 @@ invalidAccount:
 	syscall
 	jr $ra
 
+invalidAmount:
+	li $v0,4
+	la $a0,amountInvalid
+	syscall
+
+	j outing	
+
 notEnoughBalance:	
 	li $v0,4
 	la $a0,lowBalance
@@ -146,7 +154,7 @@ createAccount:
 	sw $s0,0($sp)
 
 
-	sw $a2,account($a1)
+	sw $a2,account($a1)	#now we stored account number in an account array
 
 
 	li $v0,4
@@ -165,12 +173,14 @@ createAccount:
 	syscall
 
 	move $s0, $v0
+	
+	beq $s0,$0,invalidAmount
+	
+	sw $s0, amount($a1)	#now we stored amount in amount array
 
-	sw $s0, amount($a1)
-
-	addi $a1,$a1,4	#a1 ko brhane k liye wrt 4byte
+	addi $a1,$a1,4	#to increase index wrt 4
 	addi $a2,$a2,1
-	addi $a3,$a3,1	#length brhane k liye
+	addi $a3,$a3,1	#to increase length
 
 	li $v0,4
 	la $a0,openingBalance
@@ -220,11 +230,11 @@ DepositAmount:
 	addi $s6,$0,0
 
 loop:
-	slt $s4,$s1,$a3
+	slt $s4,$s6,$a3
 	beq $s4,$0,invalidAccount	
 
-	add $s1,$s1,$s1
-	add $s1,$s1,$s1	#double the index
+	#add $s1,$s1,$s1
+	#add $s1,$s1,$s1	#double the index
 	
 	
 	add $s4,$s1,$s2
@@ -233,7 +243,7 @@ loop:
 	
 	beq $s5,$s0,outOfloop	#outOfloop matlab account number match hgya
 	addi $s6,$s6,1	#to increase counter
-	add $s1,$s6,$0	#to make index correct
+	addi $s1,$s1,4	#to make index increase
 
 	j loop
 	
@@ -243,13 +253,13 @@ outOfloop:
 	#add $s1,$s1,$s1
 	#add $s1,$s1,$s1	#4 times the index
 
-	addi $s8,$s6,0	#s8 me index hai mere paas
+	addi $s8,$s6,0	#now we have index in s8 wrt counter
 			
-	add $s4,$s1,$s3	#s4 me ab overall address hai
+	add $s4,$s1,$s3	#now we have overall amount address in s4
 
-	lw $s5,0($s4)	#ab $s5 me mere paas woh deposit account k amount ki value hai
+	lw $s5,0($s4)	#now we have previos amount of that amount array
 
-	addi $s4,$0,4	#s4 me 4 hai ab
+	addi $s4,$0,4	#we have 4 in s4
 	mult $s8,$s4
 	mflo $s8
 
@@ -260,10 +270,13 @@ outOfloop:
 	li $v0,5
 	syscall
 
-	move $s7,$v0		#input amount $s7 me hai
-	add $s5,$s5,$s7		#amount update krdi hai
+	move $s7,$v0		#input amount in s7
+	
+	beq $s7,$s0,invalidAmount
+	
+	add $s5,$s5,$s7		#update amount in s5
 
-	sw $s5,amount($s8)	#amount update hgyi array me
+	sw $s5,amount($s8)	#amount has been updated
 
 	li $v0,4
 	la $a0,amountDeposit	#ab me amount ka input lunga
@@ -318,29 +331,29 @@ WithdrawAmount:
 	addi $s6,$0,0
 
 loops:
-	slt $s4,$s1,$a3
+	slt $s4,$s6,$a3
 	beq $s4,$0,invalidAccount
 
-	add $s1,$s1,$s1
-	add $s1,$s1,$s1	#double the index
+	#add $s1,$s1,$s1
+	#add $s1,$s1,$s1	#double the index
 	
 	
 	add $s4,$s1,$s2
 
 	lw $s5,0($s4)	#get the value in array cell
 	
-	beq $s5,$s0,outOfloops	#outOfloop matlab account number match hgya
-	add $s1,$s6,$0	#to make index correct
-	addi $s6,$s6,1	#to increase counter
+	beq $s5,$s0,outOfloops	#outOfloops means account has been matched
+	addi $s1,$s1,4		#to make index correct
+	addi $s6,$s6,1		#to increase counter
 
 	j loops
 	
 outOfloops:
-	addi $s8,$s6,0	#s8 me index hai mere paas
+	addi $s8,$s6,0	#we have that index in s8
 			
-	add $s4,$s1,$s3	#s4 me ab overall address hai
+	add $s4,$s1,$s3	#overall address of amount array in s4
 
-	lw $s5,0($s4)	#ab $s5 me mere paas woh deposit account k amount ki value hai
+	lw $s5,0($s4)	#we have previos value of that account in s5
 
 	addi $s4,$0,4	#s4 me 4 hai ab
 	mult $s8,$s4
@@ -353,14 +366,16 @@ outOfloops:
 	li $v0,5
 	syscall
 
-	move $s7,$v0		#input amount $s7 me hai
+	move $s7,$v0		#input amount in $s7
+
+	beq $s7,$0,invalidAmount	
 
 	slt $s1,$s7,$s5
 	beq $s1,$0,notEnoughBalance
 
 	sub $s5,$s5,$s7		#amount update krdi hai
 
-	sw $s5,amount($s8)	#amount update hgyi array me
+	sw $s5,amount($s8)	#amount has been updated in amount array
 
 	li $v0,4
 	la $a0,amountWithdraw	#ab me amount ka output btaunga
@@ -414,11 +429,11 @@ CheckBalances:
 	addi $s6,$0,0
 
 loopss:
-	slt $s4,$s1,$a3
+	slt $s4,$s6,$a3
 	beq $s4,$0,invalidAccount
 
-	add $s1,$s1,$s1
-	add $s1,$s1,$s1	#double the index
+	#add $s1,$s1,$s1
+	#add $s1,$s1,$s1	#double the index
 	
 	
 	add $s4,$s1,$s2
@@ -426,16 +441,16 @@ loopss:
 	lw $s5,0($s4)	#get the value in array cell
 	
 	beq $s5,$s0,outOfloopss	#outOfloop matlab account number match hgya
-	add $s1,$s6,$0	#to make index correct
+	addi $s1,$s1,4	#to make index correct
 	addi $s6,$s6,1	#to increase counter
 
 	j loopss
 	
 outOfloopss:
 			
-	add $s4,$s1,$s3	#s4 me ab overall address hai
+	add $s4,$s1,$s3	#overall address of amount in s4
 
-	lw $s5,0($s4)	#ab $s5 me mere paas woh value hai jo show krni hai
+	lw $s5,0($s4)	#we have that value of amount which we want to show
 
 
 	li $v0,4
@@ -491,24 +506,23 @@ ThirdPartyTransfer:
 	addi $s5,$0,0	#s5 me counter hai
 
 looping1:
-	slt $s6,$s2,$a3
+	slt $s6,$s5,$a3
 	beq $s6,$0,invalidAccount
 
-	add $s2,$s2,$s2
-	add $s2,$s2,$s2	#double the index
+	#add $s2,$s2,$s2
+	#add $s2,$s2,$s2	#double the index
 
 	add $s6,$s2,$s3	#ab s6 me overall address ajaega account wali array ka
 
 	lw $s7,0($s6)	#ab s7 me mere paas account1 ki value agyi h
 
 	beq $s7,$s0,outOfloop1
-	addi $s5,$s5,1	#to increase counter
-	add $s2,$0,$s5		#to correct the value of s2
+	addi $s5,$s5,1		#to increase counter
+	addi $s2,$s2,4		#to increase the value of s2 wrt 4
 
 	j looping1
 
-	#abhi mere paas $s7 me account number hai aur $s2 me woh index hai jahan account number match hua hai
-
+	#uptil now we have account number in s7 and index in s2
 	
 
 outOfloop1:
@@ -522,20 +536,22 @@ outOfloop1:
 	move $s1,$v0	#putting second account input in $s1
 
 
-#for second account
+	#for second account
+	
 	add $s0,$s1,$0		#ab input account 2 ka $s0 me hai
 	
 	li $s1,0		#s1 me index hai
 	addi $s8,$0,0		#s5 me counter hai
+
 	###s3 me account ki array ka adrress hai aur s4 me amount ki array ka
 
 
 looping2:
-	slt $s6,$s1,$a3
+	slt $s6,$s8,$a3
 	beq $s6,$0,invalidAccount
 
-	add $s1,$s1,$s1
-	add $s1,$s1,$s1	#double the index
+	#add $s1,$s1,$s1
+	#add $s1,$s1,$s1	#double the index
 
 	add $s6,$s1,$s3	#s5 me account ki array ka address hai
 
@@ -543,7 +559,7 @@ looping2:
 
 	beq $s6,$s0,outOfloop2
 	addi $s8,$s8,1
-	add $s1,$s8,$0	#to correct index
+	addi $s1,$s1,4	#to correct index
 
 	j looping2
 
@@ -564,7 +580,9 @@ outOfloop2:
 	li $v0,5
 	syscall
 
-	move $s5,$v0	#ab $s5 me input amount hai mere paas
+	move $s5,$v0	#ab $s5 me input amount hai mere paas for first account
+
+	beq $s5,$0,invalidAmount
 
 	slt $s2,$s5,$s7
 	beq $s2,$0,notEnoughBalance
